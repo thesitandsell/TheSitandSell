@@ -831,7 +831,7 @@
         <p>© 2025 The Sit and Sell. All rights reserved.</p>
     </footer>
 
-    <script>
+<script>
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -846,33 +846,48 @@
             });
         });
 
-        // Form submission handling
+        // Sheet.best Integration
+        const SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/6b261bbe-942d-407b-bb9b-20718a583a53';
+
         const form = document.getElementById('consignmentForm');
         const formContainer = document.getElementById('applicationForm');
         const successMessage = document.getElementById('successMessage');
+        const submitBtn = form.querySelector('.submit-btn');
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const formData = new FormData(form);
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
             
-            fetch(form.action, {
+            const data = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value,
+                howMany: document.getElementById('howMany').value,
+                location: document.getElementById('location').value,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            fetch(SHEET_BEST_URL, {
                 method: 'POST',
-                body: formData,
                 headers: {
-                    'Accept': 'application/json'
-                }
-            }).then(response => {
-                if (response.ok) {
-                    formContainer.style.display = 'none';
-                    successMessage.classList.add('show');
-                } else {
-                    alert('There was an error submitting your application. Please try again.');
-                }
-            }).catch(error => {
-                // For demo without Formspree, just show success
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
                 formContainer.style.display = 'none';
                 successMessage.classList.add('show');
+            })
+            .catch(error => {
+                alert('There was an error. Please try again or email directly.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Application';
             });
         });
     </script>
