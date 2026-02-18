@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root {
             --cream: #FAF7F2;
@@ -16,6 +17,7 @@
             --sage: #8B9A7D;
             --sand: #E8E0D5;
             --text-muted: #6B6560;
+            --error: #c0392b;
         }
 
         * {
@@ -403,6 +405,21 @@
             border-color: var(--terracotta);
         }
 
+        input.error, select.error, textarea.error {
+            border-color: var(--error);
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
         textarea {
             min-height: 120px;
             resize: vertical;
@@ -444,6 +461,11 @@
 
         .submit-btn:hover {
             background: var(--terracotta-dark);
+        }
+
+        .submit-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
         }
 
         .form-note {
@@ -717,7 +739,7 @@
         </div>
         
         <div class="application-form" id="applicationForm">
-            <form id="consignmentForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+            <form id="consignmentForm">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="firstName">First Name *</label>
@@ -733,6 +755,7 @@
                     <div class="form-group">
                         <label for="email">Email Address *</label>
                         <input type="email" id="email" name="email" required>
+                        <div class="error-message" id="emailError">Please enter a valid email address</div>
                     </div>
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
@@ -744,14 +767,14 @@
                     <label for="category">Item Category *</label>
                     <select id="category" name="category" required>
                         <option value="">Select a category...</option>
-                        <option value="clothing">Clothing & Apparel</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="collectibles">Collectibles & Antiques</option>
-                        <option value="home">Home & Garden</option>
-                        <option value="sports">Sports & Outdoors</option>
-                        <option value="toys">Toys & Games</option>
-                        <option value="jewelry">Jewelry & Watches</option>
-                        <option value="other">Other</option>
+                        <option value="Clothing & Apparel">Clothing & Apparel</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Collectibles & Antiques">Collectibles & Antiques</option>
+                        <option value="Home & Garden">Home & Garden</option>
+                        <option value="Sports & Outdoors">Sports & Outdoors</option>
+                        <option value="Toys & Games">Toys & Games</option>
+                        <option value="Jewelry & Watches">Jewelry & Watches</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
 
@@ -795,7 +818,7 @@
         <div class="success-message" id="successMessage">
             <div class="success-icon">✓</div>
             <h3>Application Received!</h3>
-            <p>Thank you for your interest. I'll review your items and get back to you within 24-48 hours.</p>
+            <p>Thank you for your interest. I'll review your items and get back to you within 24-48 hours. A confirmation email has been sent to your inbox.</p>
         </div>
     </section>
 
@@ -831,7 +854,10 @@
         <p>© 2025 The Sit and Sell. All rights reserved.</p>
     </footer>
 
-<script>
+    <script>
+        // Initialize EmailJS
+        emailjs.init('6mfxjalpU_9-N8o_K');
+
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -846,24 +872,60 @@
             });
         });
 
-        // Sheet.best Integration
+        // Email validation function
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Sheet.best URL for Google Sheets
         const SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/6b261bbe-942d-407b-bb9b-20718a583a53';
 
         const form = document.getElementById('consignmentForm');
         const formContainer = document.getElementById('applicationForm');
         const successMessage = document.getElementById('successMessage');
         const submitBtn = form.querySelector('.submit-btn');
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('emailError');
+
+        // Real-time email validation
+        emailInput.addEventListener('blur', function() {
+            if (this.value && !isValidEmail(this.value)) {
+                this.classList.add('error');
+                emailError.classList.add('show');
+            } else {
+                this.classList.remove('error');
+                emailError.classList.remove('show');
+            }
+        });
+
+        emailInput.addEventListener('input', function() {
+            if (isValidEmail(this.value)) {
+                this.classList.remove('error');
+                emailError.classList.remove('show');
+            }
+        });
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+
+            // Validate email before submitting
+            const email = emailInput.value;
+            if (!isValidEmail(email)) {
+                emailInput.classList.add('error');
+                emailError.classList.add('show');
+                emailInput.focus();
+                return;
+            }
             
             submitBtn.disabled = true;
             submitBtn.textContent = 'Submitting...';
             
-            const data = {
+            // Gather form data
+            const formData = {
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,
-                email: document.getElementById('email').value,
+                email: email,
                 phone: document.getElementById('phone').value,
                 category: document.getElementById('category').value,
                 description: document.getElementById('description').value,
@@ -871,24 +933,40 @@
                 location: document.getElementById('location').value,
                 timestamp: new Date().toLocaleString()
             };
-            
-            fetch(SHEET_BEST_URL, {
+
+            // Send to Google Sheets via Sheet.best
+            const sheetPromise = fetch(SHEET_BEST_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                formContainer.style.display = 'none';
-                successMessage.classList.add('show');
-            })
-            .catch(error => {
-                alert('There was an error. Please try again or email directly.');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit Application';
+                body: JSON.stringify(formData)
             });
+
+            // Send confirmation email via EmailJS
+            const emailPromise = emailjs.send('service_yo81dwu', 'template_qhbl5tk', {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                category: formData.category,
+                description: formData.description,
+                howMany: formData.howMany,
+                location: formData.location
+            });
+
+            // Wait for both to complete
+            Promise.all([sheetPromise, emailPromise])
+                .then(() => {
+                    formContainer.style.display = 'none';
+                    successMessage.classList.add('show');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('There was an error submitting your application. Please try again or email directly at edwardalexkent@gmail.com');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Application';
+                });
         });
     </script>
 </body>
